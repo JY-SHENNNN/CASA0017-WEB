@@ -1,0 +1,50 @@
+body, html {
+    height: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: row;  /* 水平排列子元素 */
+    justify-content: flex-start;  /* 从左到右布局 */
+    align-items: flex-start;  /* 顶部对齐 */
+}
+
+#container {
+    width: 400px;
+    height: auto;
+    border: 1px solid #ddd;
+    padding: 20px;
+    background-color: #f9f9f9;
+    text-align: left;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin: 20px;  /* 增加外边距，使布局更整齐 */
+    flex-shrink: 0;  /* 防止容器在窗口缩小时收缩 */
+}
+
+.line-name {
+    margin: 10px 0;
+    padding: 10px;
+    font-size: 18px;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#map {
+    height: 600px;  /* 确保地图有固定高度 */
+    width: 960px;
+    flex: 1;
+    margin: 20px;
+}
+
+
+/* 小提示框样式 */
+.tooltip {
+    position: absolute;
+    background-color: rgb(145, 143, 143);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    font-size: 14px;
+    display: none;
+    pointer-events: none;
+    white-space: nowrap;
+}
