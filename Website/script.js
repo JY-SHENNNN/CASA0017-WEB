@@ -13,6 +13,9 @@ const lineColors = {
     "Waterloo & City": "#95CDBA"
 };
 
+
+const polylines = {};
+const polyMarkers = {};
 // Fetch and display all tube lines
 async function fetchTubeLines() {
     const response = await fetch('https://api.tfl.gov.uk/Line/Mode/tube/Route?serviceTypes=Regular');
@@ -27,42 +30,81 @@ async function fetchTubeLines() {
         div.textContent = line.name;
         div.style.backgroundColor = lineColors[line.name] || "#666";
 
-        div.addEventListener('mouseover', (event) => showTooltip(event, line));
+        // mouse linsterer
+        function handleMouseOver(event, line) {
+            highlightLine(line.id);               
+            centerLineStations(line.id);           
+            largeMarker(line.id);                  
+            showTooltip(event, line);              
+        }
+        function handleMouseLeave(line) {
+            resetHighlight();                      
+            dislargeMarker(line.id);               
+            hideTooltip();                        
+        }
+        div.addEventListener('mouseover', (event) => handleMouseOver(event, line));
         div.addEventListener('mousemove', moveTooltip);
-        div.addEventListener('mouseleave', hideTooltip);
+        div.addEventListener('mouseleave', () => handleMouseLeave(line));
+
+
 
         contentDiv.appendChild(div);
 
-        // Fetch and display stations for each line
-        fetchStationData(line.id, lineColors[line.name]);
+        // Fetch and draw the line
+        fetchAndDrawLine(line.id, lineColors[line.name]);
     });
 }
 
-// Fetch station data for each line
-async function fetchStationData(lineId, color) {
-    const response = await fetch(`https://api.tfl.gov.uk/Line/${lineId}/StopPoints`);
-    const stations = await response.json();
+// Fetch station data and draw continuous line (polyline)
+async function fetchAndDrawLine(lineId, color) {
+    const response = await fetch(`https://api.tfl.gov.uk/Line/${lineId}/Route/Sequence/all`);
+    const routeData = await response.json();
 
+    const stations = routeData.stopPointSequences[0].stopPoint;
+    const lineCoordinates = stations.map(station => {
+        return { lat: station.lat, lng: station.lon };
+    });
+
+    const polyline = new google.maps.Polyline({
+        path: lineCoordinates,
+        geodesic: true,
+        strokeColor: color,
+        strokeOpacity: 0.5,  // transparency for the line
+        strokeWeight: 5
+    });
+
+    // Draw the polyline on the map
+    polyline.setMap(map);
+    polylines[lineId] = polyline;
+
+    //initial polymarker, if there is no marker for this line, create one
+    if (!polyMarkers[lineId]){
+        polyMarkers[lineId] = [];
+    }
+   
+    // create the markers
     stations.forEach(station => {
         const latLng = new google.maps.LatLng(station.lat, station.lon);
 
-        // Create a circular marker
         const marker = new google.maps.Marker({
             position: latLng,
             map: map,
             icon: {
                 path: google.maps.SymbolPath.CIRCLE,
-                scale: 8,  // Size of the circle
+                scale: 7,
                 fillColor: color,
                 fillOpacity: 1,
                 strokeWeight: 1,
-                strokeColor: "#000"  // Border color of the circle
+                strokeColor: "#000"
             },
-            title: station.commonName
+            title: station.name
         });
 
+        marker.setMap(map);
+        polyMarkers[lineId].push( marker);
+      //  console.log(polyMarkers[lineId]);
         const infoWindow = new google.maps.InfoWindow({
-            content: `<strong>${station.commonName}</strong><br>Latitude: ${station.lat}<br>Longitude: ${station.lon}`
+            content: `<strong>${station.name}</strong><br>Latitude: ${station.lat}<br>Longitude: ${station.lon}`
         });
 
         marker.addListener('mouseover', () => {
@@ -74,6 +116,8 @@ async function fetchStationData(lineId, color) {
         });
     });
 }
+
+
 
 // Show tooltip on mouseover
 function showTooltip(event, line) {
@@ -101,6 +145,60 @@ function moveTooltip(event) {
 function hideTooltip() {
     const tooltip = document.getElementById('tooltip');
     tooltip.style.display = 'none';
+}
+
+// get all markers and larger them by a given line
+function largeMarker(lineId) {
+    const markers = polyMarkers[lineId];
+    markers.forEach(marker => {
+        const currentIcon = marker.getIcon();
+        marker.setIcon({
+            ...currentIcon,
+            scale: 15
+        });
+    });
+}
+
+
+function dislargeMarker(lineId){
+    const markers = polyMarkers[lineId];
+    markers.forEach(marker => {
+        const currentIcon = marker.getIcon();
+        marker.setIcon({
+            ...currentIcon,
+            scale: 7
+        });
+    });
+}
+
+
+// center the map on the stations of the selected line
+function centerLineStations(lineId) {
+    const markers = polyMarkers[lineId];
+    const bounds = new google.maps.LatLngBounds();
+    markers.forEach(marker => {
+        bounds.extend(marker.getPosition());
+    });
+
+    map.fitBounds(bounds);
+}
+
+// highlight the selected line and de-highlight the others
+function highlightLine(lineId) {
+    for (const id in polylines) {
+        if (id === lineId) {
+            polylines[id].setOptions({ strokeOpacity: 1.0 });  
+        } else {
+            polylines[id].setOptions({ strokeOpacity: 0.1 }); 
+        }
+    }
+}
+
+// reset the line highlight
+function resetHighlight() {
+    for (const id in polylines) {
+        polylines[id].setOptions({ strokeOpacity: 0.1 }); 
+    }
 }
 
 let map;
