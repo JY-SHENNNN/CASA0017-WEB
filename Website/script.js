@@ -13,6 +13,36 @@ const lineColors = {
     "Waterloo & City": "#95CDBA"
 };
 
+/* selection dropdown setting*/
+document.addEventListener('DOMContentLoaded', () => {
+    const select = document.getElementById('line');
+    Object.keys(lineColors).forEach(lineName => {
+        const option = document.createElement('option');
+        option.value = lineName.toLowerCase(); 
+        option.textContent = lineName;
+        option.style.color = "white";
+        option.style.backgroundColor = lineColors[lineName];
+        select.appendChild(option);
+    });
+});
+
+document.getElementById('routeForm').addEventListener('submit', function(event) {
+    event.preventDefault();  // 阻止表单默认提交行为
+
+    // 获取用户选择的线路
+    const selectedLine = document.getElementById('line').value;
+
+    // 如果用户未选择线路，给出提示
+    if (!selectedLine) {
+        alert('Please select a line before proceeding.');
+        return;
+    }
+
+    // 跳转到新的页面并将线路信息作为查询参数传递
+    window.location.href = `${selectedLine}.html`;
+});
+
+
 
 const polylines = {};
 const polyMarkers = {};
@@ -39,9 +69,10 @@ async function fetchTubeLines() {
         }
         function handleMouseLeave(line) {
             resetHighlight();                      
-            dislargeMarker(line.id);               
+            //dislargeMarker(line.id);               
             hideTooltip();                        
         }
+        div.addEventListener('click', () => dislargeMarker(line.id));
         div.addEventListener('mouseover', (event) => handleMouseOver(event, line));
         div.addEventListener('mousemove', moveTooltip);
         div.addEventListener('mouseleave', () => handleMouseLeave(line));
@@ -119,7 +150,7 @@ async function fetchAndDrawLine(lineId, color) {
 
 
 
-// Show tooltip on mouseover
+// Show tooltip on mouseover (next to line name)
 function showTooltip(event, line) {
     const tooltip = document.getElementById('tooltip');
     let origin = line.routeSections[0].originationName;
@@ -130,9 +161,8 @@ function showTooltip(event, line) {
 
     tooltip.innerHTML = `From: ${origin}  <br> To: ${destination}`;
     tooltip.style.display = 'block';
-    tooltip.style.left = event.pageX + 15 + 'px';
-    tooltip.style.top = event.pageY + 15 + 'px';
 }
+
 
 // Update tooltip position
 function moveTooltip(event) {
