@@ -14,11 +14,14 @@
         <h1>Plan Your Journey</h1>
         <form id="routeForm">
             <label for="from">From:</label>
-            <input type="text" id="from" name="from" placeholder="Enter start location" required>
-            
+            <select id="from" name="from" required>
+                <option value="" disabled selected>Select start location</option>
+            </select>
+
             <label for="to">To:</label>
-            <input type="text" id="to" name="to" placeholder="Enter destination" required>
-            
+            <select id="to" name="to" required>
+                <option value="" disabled selected>Select destination</option>
+            </select>
             <button type="submit">Search</button>
         </form>
     </div>
@@ -33,7 +36,6 @@
     <!-- info box -->
     <div id="info-box">
         <h2 id="LineStatus"> Line Status: </h2>
-        <p id="info-desc"></p>
         <h2 id="timetable"> Timetable: </h2>
     </div>
     

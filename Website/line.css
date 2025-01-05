@@ -27,7 +27,7 @@ body, html {
 
 /* Map Container */
 #map-container {
-    width: 55%;
+    width: 80%;
     height: 85%;
     position: fixed;
     top: 16%;  
@@ -48,7 +48,7 @@ body, html {
 
 /* Info Box */
 #info-box {
-    width: 44%;
+    width: 19%;
     height: 85%;
     position: fixed;
     top: 16%;
@@ -60,3 +60,9 @@ body, html {
     background-color: #f9f9f9;
     border: 2px solid #ddd;
 } 
+
+.vertical-label {
+    white-space: pre-line;
+    text-align: center;
+    line-height: 1.5;
+}

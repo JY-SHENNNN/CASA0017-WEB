@@ -13,6 +13,7 @@ const lineColors = {
     "Waterloo & City": "#95CDBA"
 };
 
+
 /* selection dropdown setting*/
 document.addEventListener('DOMContentLoaded', () => {
     const select = document.getElementById('line');
@@ -55,21 +56,26 @@ async function fetchTubeLines() {
         div.style.backgroundColor = lineColors[line.name] || "#666";
 
         // mouse linsterer
-        function handleMouseOver(event, line) {
-            highlightLine(line.id);               
-            centerLineStations(line.id);           
-            largeMarker(line.id);                  
-            showTooltip(event, line);              
-        }
-        function handleMouseLeave(line) {
-            resetHighlight();                      
-            //dislargeMarker(line.id);               
-            hideTooltip();                        
-        }
-        div.addEventListener('click', () => dislargeMarker(line.id));
-        div.addEventListener('mouseover', (event) => handleMouseOver(event, line));
-        div.addEventListener('mousemove', moveTooltip);
-        div.addEventListener('mouseleave', () => handleMouseLeave(line));
+        // function handleMouseOver(event, line) {
+        //     highlightLine(line.id);               
+        //     // centerLineStations(line.id);           
+        //    // largeMarker(line.id);                  
+        //     // showTooltip(event, line);              
+        // }
+        // function handleMouseLeave(line) {
+        //     resetHighlight();                      
+        //     //dislargeMarker(line.id);               
+        //     // hideTooltip();                        
+        // }
+        //console.log("line id:", line.id);
+        //div.addEventListener('click', () => dislargeMarker(line.id));
+        div.addEventListener('mouseover', () => highlightLine(line.id));
+        div.addEventListener('mouseover', () => centerLineStations(line.id));
+       // div.addEventListener('mousemove', moveTooltip);
+        div.addEventListener('mouseleave', () => resetHighlight());
+        div.addEventListener('mouseover', () => largeMarker(line.id));
+        div.addEventListener('mouseleave', () => dislargeMarker(line.id));
+
 
 
 
@@ -77,6 +83,7 @@ async function fetchTubeLines() {
 
         // Fetch and draw the line
         fetchAndDrawLine(line.id, lineColors[line.name]);
+       
     });
 }
 
@@ -85,63 +92,84 @@ async function fetchAndDrawLine(lineId, color) {
     const response = await fetch(`https://api.tfl.gov.uk/Line/${lineId}/Route/Sequence/all`);
     const routeData = await response.json();
 
-    const stations = routeData.stopPointSequences[0].stopPoint;
-    const lineCoordinates = stations.map(station => {
-        return { lat: station.lat, lng: station.lon };
+    const stopPointSequences = routeData.stopPointSequences;
+    const mainLineSet = new Set();
+    let allBranches = []; //store all branches of the line
+
+    // iterate over all branches of the line
+    stopPointSequences.forEach(sequence => {
+        const branchCoordinates = sequence.stopPoint.map(station => {
+            const coord = { lat: station.lat, lng: station.lon };
+            mainLineSet.add(JSON.stringify(coord));
+            return coord;
+        });
+
+        allBranches.push(branchCoordinates);
     });
 
-    const polyline = new google.maps.Polyline({
-        path: lineCoordinates,
-        geodesic: true,
-        strokeColor: color,
-        strokeOpacity: 0.5,  // transparency for the line
-        strokeWeight: 5
+    allBranches.forEach(branch => {
+        let uniqueBranch = [];
+        branch.forEach(coord => {
+            if (!uniqueBranch.some(item => item.lat === coord.lat && item.lng === coord.lng)) {
+                uniqueBranch.push(coord);
+            }
+        });
+
+        const polyline = new google.maps.Polyline({
+            path: uniqueBranch,
+            geodesic: true,
+            strokeColor: color,
+            strokeOpacity: 0.5,
+            strokeWeight: 1
+        });
+
+        polyline.setMap(map);
+
+        if (!polylines[lineId]) {
+            polylines[lineId] = [];
+        }
+        polylines[lineId].push(polyline);
     });
 
-    // Draw the polyline on the map
-    polyline.setMap(map);
-    polylines[lineId] = polyline;
+    // draw the markers for each station
+    stopPointSequences.forEach(sequence => {
+        sequence.stopPoint.forEach(station => {
+            const latLng = new google.maps.LatLng(station.lat, station.lon);
 
-    //initial polymarker, if there is no marker for this line, create one
-    if (!polyMarkers[lineId]){
-        polyMarkers[lineId] = [];
-    }
-   
-    // create the markers
-    stations.forEach(station => {
-        const latLng = new google.maps.LatLng(station.lat, station.lon);
+            const marker = new google.maps.Marker({
+                position: latLng,
+                map: map,
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    scale: 5,
+                    fillColor: color,
+                    fillOpacity: 0.8,
+                    strokeWeight: 0.5,
+                    strokeColor: "#000"
+                },
+                title: station.name
+            });
 
-        const marker = new google.maps.Marker({
-            position: latLng,
-            map: map,
-            icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                scale: 7,
-                fillColor: color,
-                fillOpacity: 1,
-                strokeWeight: 1,
-                strokeColor: "#000"
-            },
-            title: station.name
-        });
+            //init new array to store markers for each line
+            if (!polyMarkers[lineId]) {
+                polyMarkers[lineId] = [];
+            }
+            polyMarkers[lineId].push(marker);
 
-        marker.setMap(map);
-        polyMarkers[lineId].push( marker);
-      //  console.log(polyMarkers[lineId]);
-        const infoWindow = new google.maps.InfoWindow({
-            content: `<strong>${station.name}</strong><br>Latitude: ${station.lat}<br>Longitude: ${station.lon}`
-        });
+            const infoWindow = new google.maps.InfoWindow({
+                content: `<strong>${station.name}</strong><br>Latitude: ${station.lat}<br>Longitude: ${station.lon}`
+            });
 
-        marker.addListener('mouseover', () => {
-            infoWindow.open(map, marker);
-        });
+            marker.addListener('mouseover', () => {
+                infoWindow.open(map, marker);
+            });
 
-        marker.addListener('mouseout', () => {
-            infoWindow.close();
+            marker.addListener('mouseout', () => {
+                infoWindow.close();
+            });
         });
     });
 }
-
 
 
 // Show tooltip on mouseover (next to line name)
@@ -178,10 +206,11 @@ function largeMarker(lineId) {
         const currentIcon = marker.getIcon();
         marker.setIcon({
             ...currentIcon,
-            scale: 15
+            scale: 13
         });
     });
 }
+
 
 
 function dislargeMarker(lineId){
@@ -190,7 +219,7 @@ function dislargeMarker(lineId){
         const currentIcon = marker.getIcon();
         marker.setIcon({
             ...currentIcon,
-            scale: 7
+            scale: 5
         });
     });
 }
@@ -210,18 +239,21 @@ function centerLineStations(lineId) {
 // highlight the selected line and de-highlight the others
 function highlightLine(lineId) {
     for (const id in polylines) {
-        if (id === lineId) {
-            polylines[id].setOptions({ strokeOpacity: 1.0 });  
-        } else {
-            polylines[id].setOptions({ strokeOpacity: 0.1 }); 
-        }
+        polylines[id].forEach(polyline => {
+            if (id === lineId) {
+                polyline.setOptions({ strokeOpacity: 1, strokeWeight: 7 });  
+            } else {
+                polyline.setOptions({ strokeOpacity: 0.5, strokeWeight: 1 });
+            }
+        });
     }
 }
+
 
 // reset the line highlight
 function resetHighlight() {
     for (const id in polylines) {
-        polylines[id].setOptions({ strokeOpacity: 0.1 }); 
+        polylines[id].setOptions({ strokeOpacity: 0.5, strokeWeight: 1 }); 
     }
 }
 
@@ -229,9 +261,88 @@ let map;
 
 // Initialize Google Map
 function initMap() {
+    const silverStyle = [
+        {
+            "elementType": "geometry",
+            "stylers": [{"color": "#f5f5f5"}]
+        },
+        {
+            "elementType": "labels.icon",
+            "stylers": [{"visibility": "off"}]
+        },
+        {
+            "elementType": "labels.text.fill",
+            "stylers": [{"color": "#616161"}]
+        },
+        {
+            "elementType": "labels.text.stroke",
+            "stylers": [{"color": "#f5f5f5"}]
+        },
+        {
+            "featureType": "administrative.land_parcel",
+            "elementType": "labels.text.fill",
+            "stylers": [{"color": "#bdbdbd"}]
+        },
+        {
+            "featureType": "poi",
+            "elementType": "geometry",
+            "stylers": [{"color": "#eeeeee"}]
+        },
+        {
+            "featureType": "poi",
+            "elementType": "labels.text.fill",
+            "stylers": [{"color": "#757575"}]
+        },
+        {
+            "featureType": "poi.park",
+            "elementType": "geometry",
+            "stylers": [{"color": "#e5e5e5"}]
+        },
+        {
+            "featureType": "poi.park",
+            "elementType": "labels.text.fill",
+            "stylers": [{"color": "#9e9e9e"}]
+        },
+        {
+            "featureType": "road",
+            "elementType": "geometry",
+            "stylers": [{"color": "#ffffff"}]
+        },
+        {
+            "featureType": "road.arterial",
+            "elementType": "labels.text.fill",
+            "stylers": [{"color": "#757575"}]
+        },
+        {
+            "featureType": "road.highway",
+            "elementType": "geometry",
+            "stylers": [{"color": "#dadada"}]
+        },
+        {
+            "featureType": "road.highway",
+            "elementType": "labels.text.fill",
+            "stylers": [{"color": "#616161"}]
+        },
+        {
+            "featureType": "transit",
+            "elementType": "geometry",
+            "stylers": [{"color": "#e5e5e5"}]
+        },
+        {
+            "featureType": "water",
+            "elementType": "geometry",
+            "stylers": [{"color": "#c9c9c9"}]
+        },
+        {
+            "featureType": "water",
+            "elementType": "labels.text.fill",
+            "stylers": [{"color": "#9e9e9e"}]
+        }
+    ];
     map = new google.maps.Map(document.getElementById('map'), {
         center: { lat: 51.5074, lng: -0.1278 },  // London center
-        zoom: 12
+        zoom: 12,
+        styles: silverStyle
     });
 
     // Fetch all tube lines and display them on the map
