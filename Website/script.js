@@ -26,21 +26,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-document.getElementById('routeForm').addEventListener('submit', function(event) {
-    event.preventDefault();  // 阻止表单默认提交行为
-
-    // 获取用户选择的线路
+document.getElementById('routeForm').onsubmit = function(event) {
+    event.preventDefault();
     const selectedLine = document.getElementById('line').value;
 
-    // 如果用户未选择线路，给出提示
-    if (!selectedLine) {
-        alert('Please select a line before proceeding.');
-        return;
-    }
+    // encode the line name to avoid special characters
+    const encodedLine = encodeURIComponent(selectedLine);  
+    window.location.href = `line.html?line=${encodedLine}`;
+};
 
-    // 跳转到新的页面并将线路信息作为查询参数传递
-    window.location.href = `${selectedLine}.html`;
-});
 
 
 

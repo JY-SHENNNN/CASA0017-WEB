@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tube Route Finder</title>
+    <link rel="stylesheet" href="line.css">
+</head>
+<body>
+    
+
+    <!-- query form -->
+    <div class="container" id="box">
+        <h1>Plan Your Journey</h1>
+        <form id="routeForm">
+            <label for="from">From:</label>
+            <input type="text" id="from" name="from" placeholder="Enter start location" required>
+            
+            <label for="to">To:</label>
+            <input type="text" id="to" name="to" placeholder="Enter destination" required>
+            
+            <button type="submit">Search</button>
+        </form>
+    </div>
+
+
+    <!-- map div -->
+    <div id="map-container">
+        <div id="map"></div> 
+    </div>
+
+
+    <!-- info box -->
+    <div id="info-box">
+        <h2 id="LineStatus"> Line Status: </h2>
+        <p id="info-desc"></p>
+        <h2 id="timetable"> Timetable: </h2>
+    </div>
+    
+    <!-- load the google map api -->
+
+
+    <script src="config.js"></script>
+    <script>
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=visualization`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+    </script>
+
+
+    <script src="lineScript.js"></script>
+
+</body>
+</html>

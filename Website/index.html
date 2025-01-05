@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tube Lines</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- qury box -->
+    <div id="box">
+        <h1>Which tube you would like to use today?</h1>
+        <form id="routeForm">
+            <select id="line" name="line" required>
+                <option value="" disabled selected>Select a line</option>
+            </select>            
+    
+            <button type="submit">Search</button>
+        </form>
+    </div>
+    
+    
+
+    <!--line name-->
+    <div id="container">
+        <h2>Tube Line Names</h2>
+        <div id="content">Loading...</div>
+        <div id="tooltip" class="tooltip"></div>
+    </div>
+
+    <!-- map div -->
+    <div id="map-container">
+        <div id="map"></div> 
+    </div>
+    
+    
+    
+    <!-- load the google map api -->
+    <script src="config.js"></script>
+    <script>
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=visualization`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+    </script>
+
+    
+    <script src="script.js"></script>
+</body>
+</html>
